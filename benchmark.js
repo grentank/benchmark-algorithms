@@ -1,9 +1,13 @@
-function benchmark(fn, iterations) {
-  const start = Date.now();
-  for (let i = 0; i < iterations; i++) {
-    fn(i);
+function benchmark(fn, value, iterations) {
+  try {
+    const start = Date.now();
+    for (let i = 0; i < iterations; i++) {
+      fn(value);
+    }
+    return Date.now() - start;
+  } catch (error) {
+    return -1;
   }
-  return Date.now() - start;
 }
 
 module.exports = benchmark;
