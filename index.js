@@ -1,44 +1,32 @@
 const closedForm = require('./algorithms/closedForm');
 const doubleMethod = require('./algorithms/doubleMethod');
 const iterative = require('./algorithms/iterative');
+const purposelyInefficient = require('./algorithms/purposelyInefficient');
 const recursive = require('./algorithms/recursive');
-const benchmark = require('./benchmark');
+const runBenchmarks = require('./utils/runBenchmarks');
 
 function runBenchmark(power, iterations) {
   const iterationValues = new Array(power)
     .fill(1)
-    .map((_, index) => 1000 * (2 ** (power - 1 - index)))
+    .map((_, index) => 100 * (2 ** (power - 1 - index)))
     .toReversed();
 
-  const benchmarkFunctions = [doubleMethod, iterative, recursive, closedForm];
+  const benchmarkFunctions = [purposelyInefficient, doubleMethod, recursive, iterative, closedForm];
 
-  const benchmarkResults = benchmarkFunctions.map((func) => {
-    const iterationData = iterationValues.map((value) => {
-      const time = benchmark(func, value, iterations);
-      return {
-        name: func.name,
-        value,
-        iterations,
-        time,
-      };
-    });
-
-    const dataWithRatio = iterationData.map((data, index) => {
-      if (index === 0 || iterationData[index - 1].time === 0) return { ...data, ratio: 0 };
-
-      const ratio = data.time / iterationData[index - 1].time;
-      return {
-        ...data,
-        ratio: ratio.toFixed(2),
-      };
-    });
-
-    return dataWithRatio;
-  });
+  const benchmarkResults = runBenchmarks(benchmarkFunctions, iterationValues, iterations);
 
   benchmarkResults.forEach((result) => {
+    const nonZeroProduct = result.reduce((acc, oneTest) => (Math.abs(oneTest.ratio) <= 1
+      ? acc : oneTest.ratio * acc), 1);
+    const nonZeroAmount = result.filter((oneTest) => Math.abs(oneTest.ratio) > 1).length;
+    const geometricMean = nonZeroProduct ** (1 / nonZeroAmount);
+    console.log(`Benchmarking ${result[0].name}\nGeometric mean: ${geometricMean.toFixed(3)}\n`);
     console.table(result);
+    console.log('\n');
   });
 }
 
-runBenchmark(6, 1000);
+const powersOfValue = 8;
+const iterations = 500;
+
+runBenchmark(powersOfValue, iterations);
